@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Badminton Scorekeeper - Premium Apple Style</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Floating Switch Sides Button -->
+  <button id="btn-switch-sides" class="btn-icon-switch" title="สลับฝั่งผู้เล่น" aria-label="Switch Sides">
+    <svg viewBox="0 0 24 24">
+      <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
+    </svg>
+  </button>
+
+  <div class="app-container">
+    
+    <!-- Title Header -->
+    <header>
+      <h1 id="app-title">BATMINTON <span>SCORE</span></h1>
+    </header>
+
+    <!-- Score Cards Area -->
+    <main class="scores-container" id="scores-container">
+      
+      <!-- Player 1 Score Card -->
+      <div class="score-card-wrapper" id="wrapper-p1">
+        <div class="score-card" id="card-p1" onclick="app.scorePoint(0)">
+          <div class="service-indicator" id="serve-p1">
+            <span class="service-dot"></span>
+            <span class="serve-text" id="serve-text-p1">RIGHT</span>
+          </div>
+          <span class="score-number" id="score-p1">00</span>
+        </div>
+        <div class="player-info">
+          <input type="text" class="player-name" id="name-p1" value="Player 1" onchange="app.updatePlayerName(0, this.value)" aria-label="Player 1 Name">
+        </div>
+      </div>
+
+      <!-- Player 2 Score Card -->
+      <div class="score-card-wrapper" id="wrapper-p2">
+        <div class="score-card" id="card-p2" onclick="app.scorePoint(1)">
+          <div class="service-indicator" id="serve-p2">
+            <span class="service-dot"></span>
+            <span class="serve-text" id="serve-text-p2">RIGHT</span>
+          </div>
+          <span class="score-number" id="score-p2">00</span>
+        </div>
+        <div class="player-info">
+          <input type="text" class="player-name" id="name-p2" value="Player 2" onchange="app.updatePlayerName(1, this.value)" aria-label="Player 2 Name">
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Sets History Tracking Section -->
+    <section class="sets-section">
+      <h2 class="sets-title">SETS</h2>
+      <div class="sets-list">
+        
+        <!-- Set 1 -->
+        <div class="set-row" id="set-row-0">
+          <span class="set-score left" id="set-score-l0">-</span>
+          <span class="set-number">1</span>
+          <span class="set-score right" id="set-score-r0">-</span>
+        </div>
+
+        <!-- Set 2 -->
+        <div class="set-row" id="set-row-1">
+          <span class="set-score left" id="set-score-l1">-</span>
+          <span class="set-number">2</span>
+          <span class="set-score right" id="set-score-r1">-</span>
+        </div>
+
+        <!-- Set 3 -->
+        <div class="set-row" id="set-row-2">
+          <span class="set-score left" id="set-score-l2">-</span>
+          <span class="set-number">3</span>
+          <span class="set-score right" id="set-score-r2">-</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Control Buttons -->
+    <footer class="controls-container">
+      <button class="btn btn-primary" id="btn-new-match" onclick="app.confirmNewMatch()">New Match</button>
+      <button class="btn btn-secondary" id="btn-undo" onclick="app.undo()">Undo</button>
+      <button class="btn btn-secondary" id="btn-progress" onclick="app.toggleStatsModal(true)">Progress</button>
+    </footer>
+
+  </div>
+
+  <!-- iOS Slide-up Stats Sheet Modal -->
+  <div class="modal-overlay" id="stats-modal" onclick="app.toggleStatsModal(false)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      
+      <div class="modal-header">
+        <h3 class="modal-title">Match Statistics</h3>
+        <button class="btn-close" onclick="app.toggleStatsModal(false)">&times;</button>
+      </div>
+
+      <div class="stats-list">
+        <!-- Stat Item: Total Points -->
+        <div class="stat-item">
+          <div class="stat-label">Total Points Won</div>
+          <div class="stat-bars-container">
+            <span class="stat-value left" id="stat-val-l-total">0</span>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill left" id="stat-bar-l-total" style="width: 50%;"></div>
+              <div class="stat-bar-fill right" id="stat-bar-r-total" style="width: 50%;"></div>
+            </div>
+            <span class="stat-value right" id="stat-val-r-total">0</span>
+          </div>
+        </div>
+
+        <!-- Stat Item: Max Consecutive Points -->
+        <div class="stat-item">
+          <div class="stat-label">Consecutive Points Streak</div>
+          <div class="stat-bars-container">
+            <span class="stat-value left" id="stat-val-l-streak">0</span>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill left" id="stat-bar-l-streak" style="width: 50%;"></div>
+              <div class="stat-bar-fill right" id="stat-bar-r-streak" style="width: 50%;"></div>
+            </div>
+            <span class="stat-value right" id="stat-val-r-streak">0</span>
+          </div>
+        </div>
+
+        <!-- Score Progress Timeline Chart -->
+        <div class="timeline-container">
+          <div class="timeline-title">Score Progress Sequence (Current Set)</div>
+          <div class="timeline-chart" id="timeline-chart">
+            <!-- Dynamically populated bars showing scoring sequence -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Winner Celebration Overlay -->
+  <div class="winner-overlay" id="winner-modal">
+    <div id="confetti-container" style="position:absolute; width:100%; height:100%; pointer-events:none; overflow:hidden;"></div>
+    <div class="winner-card">
+      <div class="winner-trophy">🏆</div>
+      <div class="winner-announcement">MATCH COMPLETED</div>
+      <div class="winner-name" id="winner-name">Player 1 Wins!</div>
+      <div class="winner-score-line" id="winner-score-line">2 Sets to 0</div>
+      <button class="btn btn-primary" onclick="app.closeWinnerModalAndReset()" style="width: 100%; max-width: 200px;">Play Again</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
