@@ -1,7 +1,101 @@
+const TRANSLATIONS = {
+  th: {
+    appTitle: "BATMINTON <span>SCORE</span>",
+    defaultPlayers: ["ผู้เล่น 1", "ผู้เล่น 2"],
+    rightServe: "เสิร์ฟขวา",
+    leftServe: "เสิร์ฟซ้าย",
+    setsTitle: "SETS",
+    btnNewMatch: "เริ่มแมตช์ใหม่",
+    btnUndo: "ย้อนกลับ",
+    btnProgress: "วิเคราะห์เกม",
+    statsTitle: "สถิติการแข่งขัน",
+    totalPoints: "คะแนนรวมที่ได้",
+    consecutiveStreak: "ทำคะแนนต่อเนื่องสูงสุด",
+    timelineTitle: "ลำดับการได้คะแนน (เซตปัจจุบัน)",
+    noPointsYet: "ยังไม่มีคะแนนในเซตนี้",
+    matchCompleted: "จบการแข่งขัน",
+    winsMatch: "ชนะการแข่งขัน!",
+    setsTo: "เซต ต่อ",
+    playAgain: "เล่นอีกครั้ง",
+    confirmReset: "ต้องการเริ่มแมตช์ใหม่ใช่หรือไม่? คะแนนที่กำลังเล่นอยู่จะหายไป",
+    switchSidesTitle: "สลับฝั่งผู้เล่น",
+    changeLangTitle: "เปลี่ยนภาษา"
+  },
+  en: {
+    appTitle: "BADMINTON <span>SCORE</span>",
+    defaultPlayers: ["Player 1", "Player 2"],
+    rightServe: "RIGHT SERVE",
+    leftServe: "LEFT SERVE",
+    setsTitle: "SETS",
+    btnNewMatch: "New Match",
+    btnUndo: "Undo",
+    btnProgress: "Progress",
+    statsTitle: "Match Statistics",
+    totalPoints: "Total Points Won",
+    consecutiveStreak: "Consecutive Points Streak",
+    timelineTitle: "Score Progress Sequence (Current Set)",
+    noPointsYet: "No points in this set yet",
+    matchCompleted: "MATCH COMPLETED",
+    winsMatch: "Wins!",
+    setsTo: "Sets to",
+    playAgain: "Play Again",
+    confirmReset: "Do you want to start a new match? Current scores will be lost.",
+    switchSidesTitle: "Switch Sides",
+    changeLangTitle: "Change Language"
+  },
+  ja: {
+    appTitle: "バドミントン <span>スコア</span>",
+    defaultPlayers: ["プレイヤー 1", "プレイヤー 2"],
+    rightServe: "ライト サーブ",
+    leftServe: "レフト サーブ",
+    setsTitle: "セット",
+    btnNewMatch: "ニューマッチ",
+    btnUndo: "元に戻す",
+    btnProgress: "進行状況",
+    statsTitle: "試合の統計",
+    totalPoints: "合計得点",
+    consecutiveStreak: "連続得点",
+    timelineTitle: "得点経過シーケンス (現在のセット)",
+    noPointsYet: "このセットの得点はまだありません",
+    matchCompleted: "試合終了",
+    winsMatch: "の勝ち！",
+    setsTo: "セット 対",
+    playAgain: "もう一度プレイ",
+    confirmReset: "新しい試合を始めますか？現在のスコアは失われます。",
+    switchSidesTitle: "コート交代",
+    changeLangTitle: "言語変更"
+  },
+  ko: {
+    appTitle: "배드민턴 <span>스코어</span>",
+    defaultPlayers: ["선수 1", "선수 2"],
+    rightServe: "오른쪽 서브",
+    leftServe: "왼쪽 서브",
+    setsTitle: "세트",
+    btnNewMatch: "새 매치",
+    btnUndo: "실행 취소",
+    btnProgress: "진행 상황",
+    statsTitle: "경기 통계",
+    totalPoints: "총 득점",
+    consecutiveStreak: "연속 득점",
+    timelineTitle: "점수 득점 순서 (현재 세트)",
+    noPointsYet: "이 세트의 점수가 아직 없습니다",
+    matchCompleted: "경기 종료",
+    winsMatch: "승리!",
+    setsTo: "세트 대",
+    playAgain: "다시 하기",
+    confirmReset: "새 매치를 시작하시겠습니까? 현재 점수가 초기화됩니다.",
+    switchSidesTitle: "코트 변경",
+    changeLangTitle: "언어 변경"
+  }
+};
+
 class BadmintonApp {
   constructor() {
+    const defaultLang = localStorage.getItem('badminton_lang') || 'th';
     this.state = {
-      playerNames: ["Player 1", "Player 2"],
+      lang: defaultLang,
+      playerNames: [...TRANSLATIONS[defaultLang].defaultPlayers],
+      customizedNames: [false, false],
       scores: [0, 0], // Logical scores [Player 1, Player 2]
       sets: [
         [null, null], // Set 1
@@ -20,11 +114,21 @@ class BadmintonApp {
 
     this.initElements();
     this.bindEvents();
-    this.updateUI();
+    this.changeLanguage(defaultLang); // Set translation labels and do initial updateUI
   }
 
   initElements() {
     this.el = {
+      btnLang: document.getElementById('btn-lang'),
+      langDropdown: document.getElementById('lang-dropdown'),
+      appTitle: document.getElementById('app-title'),
+      setsTitle: document.getElementById('sets-title'),
+      btnPlayAgain: document.getElementById('btn-play-again'),
+      statLabelTotal: document.getElementById('stat-label-total'),
+      statLabelStreak: document.getElementById('stat-label-streak'),
+      timelineTitle: document.getElementById('timeline-title'),
+      winnerAnnouncement: document.getElementById('winner-announcement'),
+      
       cardP1: document.getElementById('card-p1'),
       cardP2: document.getElementById('card-p2'),
       scoreP1: document.getElementById('score-p1'),
@@ -51,6 +155,8 @@ class BadmintonApp {
         document.getElementById('set-score-r2')
       ],
       btnUndo: document.getElementById('btn-undo'),
+      btnProgress: document.getElementById('btn-progress'),
+      btnNewMatch: document.getElementById('btn-new-match'),
       btnSwitchSides: document.getElementById('btn-switch-sides'),
       statsModal: document.getElementById('stats-modal'),
       winnerModal: document.getElementById('winner-modal'),
@@ -75,6 +181,17 @@ class BadmintonApp {
   bindEvents() {
     // Switch sides button
     this.el.btnSwitchSides.addEventListener('click', () => this.switchSides());
+
+    // Toggle language dropdown
+    this.el.btnLang.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.el.langDropdown.classList.toggle('active');
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', () => {
+      this.el.langDropdown.classList.remove('active');
+    });
 
     // Setup visual highlights on card tap (haptic feel)
     this.setupCardHaptics(this.el.cardP1);
@@ -108,6 +225,58 @@ class BadmintonApp {
     });
   }
 
+  // Handle language change
+  changeLanguage(lang) {
+    if (!TRANSLATIONS[lang]) return;
+
+    this.state.lang = lang;
+    localStorage.setItem('badminton_lang', lang);
+
+    // Update active visual option in the dropdown
+    document.querySelectorAll('.lang-option').forEach(opt => {
+      if (opt.getAttribute('data-lang') === lang) {
+        opt.classList.add('active');
+      } else {
+        opt.classList.remove('active');
+      }
+    });
+
+    // Translate player names if they are still defaults
+    const trans = TRANSLATIONS[lang];
+    if (!this.state.customizedNames[0]) {
+      this.state.playerNames[0] = trans.defaultPlayers[0];
+    }
+    if (!this.state.customizedNames[1]) {
+      this.state.playerNames[1] = trans.defaultPlayers[1];
+    }
+
+    this.updateTranslations();
+    this.updateUI();
+  }
+
+  updateTranslations() {
+    const trans = TRANSLATIONS[this.state.lang];
+    
+    // Set headers and structural labels
+    this.el.appTitle.innerHTML = trans.appTitle;
+    this.el.setsTitle.textContent = trans.setsTitle;
+    this.el.btnNewMatch.textContent = trans.btnNewMatch;
+    this.el.btnUndo.textContent = trans.btnUndo;
+    this.el.btnProgress.textContent = trans.btnProgress;
+    this.el.btnPlayAgain.textContent = trans.playAgain;
+    
+    this.el.statLabelTotal.textContent = trans.totalPoints;
+    this.el.statLabelStreak.textContent = trans.consecutiveStreak;
+    this.el.timelineTitle.textContent = trans.timelineTitle;
+    this.el.winnerAnnouncement.textContent = trans.matchCompleted;
+    
+    // Tooltips and accessibility
+    this.el.btnSwitchSides.title = trans.switchSidesTitle;
+    this.el.btnLang.title = trans.changeLangTitle;
+    
+    document.documentElement.lang = this.state.lang;
+  }
+
   // Save state snapshot for Undo
   pushHistory() {
     const snapshot = JSON.stringify({
@@ -118,7 +287,9 @@ class BadmintonApp {
       server: this.state.server,
       isMatchOver: this.state.isMatchOver,
       pointHistory: [...this.state.pointHistory],
-      setPointHistories: this.state.setPointHistories.map(h => [...h])
+      setPointHistories: this.state.setPointHistories.map(h => [...h]),
+      customizedNames: [...this.state.customizedNames],
+      playerNames: [...this.state.playerNames]
     });
     this.state.historyStack.push(snapshot);
   }
@@ -211,6 +382,8 @@ class BadmintonApp {
     this.state.isMatchOver = snapshot.isMatchOver;
     this.state.pointHistory = snapshot.pointHistory;
     this.state.setPointHistories = snapshot.setPointHistories;
+    this.state.customizedNames = snapshot.customizedNames;
+    this.state.playerNames = snapshot.playerNames;
 
     this.playAudioFeedback(400, 0.05); // Deeper tone for undo
     this.updateUI();
@@ -222,17 +395,26 @@ class BadmintonApp {
   }
 
   updatePlayerName(playerIndex, newName) {
-    this.state.playerNames[playerIndex] = newName.trim() || `Player ${playerIndex + 1}`;
+    const trimmed = newName.trim();
+    const trans = TRANSLATIONS[this.state.lang];
+    
+    this.state.playerNames[playerIndex] = trimmed || trans.defaultPlayers[playerIndex];
+    
+    // Check if user typed default name to reset customization flag
+    const isDefault = trans.defaultPlayers.includes(trimmed) || trimmed === "";
+    this.state.customizedNames[playerIndex] = !isDefault;
+    
     this.updateUI();
   }
 
   confirmNewMatch() {
-    if (confirm("ต้องการเริ่มแมตช์ใหม่ใช่หรือไม่? คะแนนที่กำลังเล่นอยู่จะหายไป")) {
+    if (confirm(TRANSLATIONS[this.state.lang].confirmReset)) {
       this.resetMatch();
     }
   }
 
   resetMatch() {
+    const trans = TRANSLATIONS[this.state.lang];
     this.state.scores = [0, 0];
     this.state.sets = [
       [null, null],
@@ -246,13 +428,21 @@ class BadmintonApp {
     this.state.pointHistory = [];
     this.state.setPointHistories = [[], [], []];
     this.state.historyStack = [];
+    
+    // Reset names only if they weren't customized
+    if (!this.state.customizedNames[0]) {
+      this.state.playerNames[0] = trans.defaultPlayers[0];
+    }
+    if (!this.state.customizedNames[1]) {
+      this.state.playerNames[1] = trans.defaultPlayers[1];
+    }
+    
     this.updateUI();
   }
 
   // Renders state changes to the DOM
   updateUI() {
     // 1. Identify visual orientation
-    // visualLeft corresponds to Player index depending on swappedSides
     const leftPlayerIdx = this.state.swappedSides ? 1 : 0;
     const rightPlayerIdx = this.state.swappedSides ? 0 : 1;
 
@@ -264,15 +454,15 @@ class BadmintonApp {
     this.el.nameP2.value = this.state.playerNames[rightPlayerIdx];
 
     // 3. Render Service Indicator
-    // Left serve active if left player is serving
     const isLeftServing = this.state.server === leftPlayerIdx;
     const isRightServing = this.state.server === rightPlayerIdx;
+    const trans = TRANSLATIONS[this.state.lang];
 
     if (isLeftServing && !this.state.isMatchOver) {
       this.el.serveP1.classList.add('active');
       const score = this.state.scores[leftPlayerIdx];
       // Even score -> Right service court, Odd score -> Left service court
-      this.el.serveTextP1.textContent = score % 2 === 0 ? "RIGHT SERVE" : "LEFT SERVE";
+      this.el.serveTextP1.textContent = score % 2 === 0 ? trans.rightServe : trans.leftServe;
     } else {
       this.el.serveP1.classList.remove('active');
     }
@@ -280,13 +470,13 @@ class BadmintonApp {
     if (isRightServing && !this.state.isMatchOver) {
       this.el.serveP2.classList.add('active');
       const score = this.state.scores[rightPlayerIdx];
-      this.el.serveTextP2.textContent = score % 2 === 0 ? "RIGHT SERVE" : "LEFT SERVE";
+      this.el.serveTextP2.textContent = score % 2 === 0 ? trans.rightServe : trans.leftServe;
     } else {
       this.el.serveP2.classList.remove('active');
     }
 
     // 4. Render Sets table
-    // Important: Left column of SETS displays Player 0, Right column displays Player 1
+    // Left column of SETS displays Player 0, Right column displays Player 1
     for (let s = 0; s < 3; s++) {
       const row = this.el.setRows[s];
       const scoreL = this.el.setScoresL[s];
@@ -372,11 +562,12 @@ class BadmintonApp {
   }
 
   calculateStats() {
+    const trans = TRANSLATIONS[this.state.lang];
+    
     // 1. Total Points
     let totalP0 = 0;
     let totalP1 = 0;
 
-    // Sum sets
     this.state.sets.forEach(s => {
       if (s[0] !== null) {
         totalP0 += s[0];
@@ -384,7 +575,6 @@ class BadmintonApp {
       }
     });
 
-    // Add current live scores
     if (!this.state.isMatchOver) {
       totalP0 += this.state.scores[0];
       totalP1 += this.state.scores[1];
@@ -393,7 +583,6 @@ class BadmintonApp {
     this.el.statValLTotal.textContent = totalP0;
     this.el.statValRTotal.textContent = totalP1;
 
-    // Calculate bar percentage
     const grandTotal = totalP0 + totalP1;
     let pctLTotal = 50;
     let pctRTotal = 50;
@@ -404,7 +593,7 @@ class BadmintonApp {
     this.el.statBarLTotal.style.width = `${pctLTotal}%`;
     this.el.statBarRTotal.style.width = `${pctRTotal}%`;
 
-    // 2. Streaks (longest run of consecutive points)
+    // 2. Streaks
     let maxStreak0 = 0;
     let maxStreak1 = 0;
     let currentStreak0 = 0;
@@ -435,7 +624,7 @@ class BadmintonApp {
     this.el.statBarLStreak.style.width = `${pctLStreak}%`;
     this.el.statBarRStreak.style.width = `${pctRStreak}%`;
 
-    // 3. Render point sequence graph
+    // 3. Render timeline
     this.el.timelineChart.innerHTML = '';
     const currentSetPoints = this.state.setPointHistories[this.state.activeSet];
     
@@ -445,13 +634,12 @@ class BadmintonApp {
       placeholder.style.fontSize = '13px';
       placeholder.style.textAlign = 'center';
       placeholder.style.width = '100%';
-      placeholder.textContent = 'ยังไม่มีคะแนนในเซตนี้';
+      placeholder.textContent = trans.noPointsYet;
       this.el.timelineChart.appendChild(placeholder);
     } else {
       currentSetPoints.forEach((scorer) => {
         const bar = document.createElement('div');
         bar.className = `timeline-bar ${scorer === 0 ? 'left-point' : 'right-point'}`;
-        // Set fixed height or vary it slightly for visuals
         bar.style.height = '40px';
         this.el.timelineChart.appendChild(bar);
       });
@@ -459,23 +647,24 @@ class BadmintonApp {
   }
 
   showWinner(winnerIndex) {
+    const trans = TRANSLATIONS[this.state.lang];
     const winnerName = this.state.playerNames[winnerIndex];
-    this.el.winnerName.textContent = `${winnerName} ชนะการแข่งขัน!`;
+    
+    if (this.state.lang === 'ja') {
+      this.el.winnerName.textContent = `${winnerName}${trans.winsMatch}`;
+    } else {
+      this.el.winnerName.textContent = `${winnerName} ${trans.winsMatch}`;
+    }
 
-    // Format score line (e.g. 2 Sets to 1)
     const wins = [0, 0];
     this.state.setWinners.forEach(w => {
       if (w !== null) wins[w]++;
     });
-    this.el.winnerScoreLine.textContent = `${wins[winnerIndex]} เซต ต่อ ${wins[1 - winnerIndex]}`;
+    this.el.winnerScoreLine.textContent = `${wins[winnerIndex]} ${trans.setsTo} ${wins[1 - winnerIndex]}`;
 
-    // Pop the overlay
+    // Pop modal
     this.el.winnerModal.classList.add('active');
-    
-    // Play celebratory tone sequence
     this.playCelebrationMelody();
-
-    // Spawn confetti
     this.spawnConfetti();
   }
 

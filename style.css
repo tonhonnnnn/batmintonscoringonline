@@ -355,6 +355,88 @@ header h1 span {
   background-color: var(--bg-button-hover);
 }
 
+/* Language Switcher Floating Button and Dropdown */
+.btn-icon-lang {
+  position: absolute;
+  top: 40px;
+  left: 24px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--bg-card);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-premium);
+  transition: var(--transition-smooth);
+  z-index: 5;
+}
+
+.btn-icon-lang:hover {
+  background-color: var(--bg-primary);
+}
+
+.btn-icon-lang:active {
+  transform: scale(0.9);
+}
+
+.btn-icon-lang svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--text-secondary);
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: 90px;
+  left: 24px;
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: var(--transition-smooth);
+}
+
+.lang-dropdown.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.lang-option {
+  font-family: inherit;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.lang-option:hover {
+  background-color: var(--bg-primary);
+}
+
+.lang-option.active {
+  color: var(--accent-blue);
+  background-color: var(--accent-blue-light);
+}
+
 /* Switch Sides Floating Button style option */
 .btn-icon-switch {
   position: absolute;
