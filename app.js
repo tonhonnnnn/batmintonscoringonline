@@ -43,6 +43,28 @@ const TRANSLATIONS = {
     switchSidesTitle: "Switch Sides",
     changeLangTitle: "Change Language"
   },
+  zh: {
+    appTitle: "羽毛球 <span>比分</span>",
+    defaultPlayers: ["选手 1", "选手 2"],
+    rightServe: "右区发球",
+    leftServe: "左区发球",
+    setsTitle: "局数",
+    btnNewMatch: "新比赛",
+    btnUndo: "撤销",
+    btnProgress: "统计",
+    statsTitle: "比赛统计",
+    totalPoints: "总得分",
+    consecutiveStreak: "最大连得分",
+    timelineTitle: "得分走势 (当前局)",
+    noPointsYet: "本局尚无得分",
+    matchCompleted: "比赛结束",
+    winsMatch: "获胜！",
+    setsTo: "比",
+    playAgain: "再来一局",
+    confirmReset: "确定要重新开始比赛吗？当前比分将会丢失。",
+    switchSidesTitle: "交换场地",
+    changeLangTitle: "切换语言"
+  },
   ja: {
     appTitle: "バドミントン <span>スコア</span>",
     defaultPlayers: ["プレイヤー 1", "プレイヤー 2"],
@@ -650,7 +672,7 @@ class BadmintonApp {
     const trans = TRANSLATIONS[this.state.lang];
     const winnerName = this.state.playerNames[winnerIndex];
     
-    if (this.state.lang === 'ja') {
+    if (this.state.lang === 'ja' || this.state.lang === 'zh') {
       this.el.winnerName.textContent = `${winnerName}${trans.winsMatch}`;
     } else {
       this.el.winnerName.textContent = `${winnerName} ${trans.winsMatch}`;
