@@ -1572,7 +1572,7 @@ struct SettingsSheetView: View {
                     .pickerStyle(.menu)
                     
                     Toggle(vm.getSettingsString(key: "voiceAnnouncer"), isOn: $vm.isVoiceEnabled)
-                        .toggleStyle(SwitchToggleStyle(onTintColor: Color(red: 0, green: 113/255, blue: 227/255)))
+                        .tint(Color(red: 0, green: 113/255, blue: 227/255))
                 }
             }
             .navigationTitle(vm.getSettingsString(key: "settings"))
