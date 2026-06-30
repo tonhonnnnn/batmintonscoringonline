@@ -447,7 +447,7 @@ struct ContentView: View {
                 secondaryButton: .cancel()
             )
         }
-        .onChange(of: vm.scores) { _ in
+        .onChange(of: vm.scores) { oldValue, newValue in
             // Animate left score changes
             if vm.scores[0] > 0 {
                 withAnimation(.spring(response: 0.18, dampingFraction: 0.45, blendDuration: 0)) {
@@ -1079,11 +1079,24 @@ struct WinnerOverlayView: View {
             TimelineView(.animation) { timeline in
                 Canvas { context, size in
                     let elapsed = timeline.date.timeIntervalSinceReferenceDate
-                    for index in particles.indices {
-                        particles[index].update(size: size, elapsed: elapsed)
-                        let particle = particles[index]
+                    for particle in particles {
+                        let age = elapsed - particle.spawnTime
+                        var y = particle.startY + particle.speedY * age
+                        var x = particle.startX + particle.speedX * age
+                        
+                        // Loop boundaries
+                        if y > size.height + 50 {
+                            let cycleHeight = size.height + 150
+                            let timeToCycle = cycleHeight / particle.speedY
+                            let cycles = floor(age / timeToCycle)
+                            y = particle.startY + particle.speedY * age - cycles * cycleHeight
+                            x = particle.startX + particle.speedX * age - cycles * (particle.speedX * timeToCycle)
+                        }
+                        
+                        x = x.truncatingRemainder(dividingBy: size.width + 100) - 50
+                        
                         context.fill(
-                            Path(ellipseIn: CGRect(x: particle.x, y: particle.y, width: particle.width, height: particle.height)),
+                            Path(ellipseIn: CGRect(x: x, y: y, width: particle.width, height: particle.height)),
                             with: .color(particle.color)
                         )
                     }
@@ -1155,16 +1168,18 @@ struct WinnerOverlayView: View {
     private func generateConfetti() {
         let colors: [Color] = [.blue, .green, .orange, .pink, .purple, .red, .yellow]
         var newParticles: [ConfettiParticle] = []
+        let now = Date().timeIntervalSinceReferenceDate
         for _ in 0..<75 {
             newParticles.append(
                 ConfettiParticle(
-                    x: Double.random(in: -50...400),
-                    y: Double.random(in: -100...0),
+                    startX: Double.random(in: -50...400),
+                    startY: Double.random(in: -100...0),
                     width: Double.random(in: 6...12),
                     height: Double.random(in: 6...12),
                     color: colors.randomElement()!,
                     speedY: Double.random(in: 120...240),
-                    speedX: Double.random(in: -40...40)
+                    speedX: Double.random(in: -40...40),
+                    spawnTime: now
                 )
             )
         }
@@ -1201,32 +1216,14 @@ struct WinnerOverlayView: View {
 
 // MARK: - Confetti Particle Animation Struct
 struct ConfettiParticle {
-    var x: Double
-    var y: Double
-    var width: Double
-    var height: Double
-    var color: Color
-    var speedY: Double
-    var speedX: Double
-    var lastUpdate: Double = 0
-    
-    mutating func update(size: CGSize, elapsed: Double) {
-        if lastUpdate == 0 {
-            lastUpdate = elapsed
-            return
-        }
-        let dt = elapsed - lastUpdate
-        lastUpdate = elapsed
-        
-        y += speedY * dt
-        x += speedX * dt
-        
-        // Loop back up if it falls off screen bounds
-        if y > size.height + 50 {
-            y = Double.random(in: -50...0)
-            x = Double.random(in: 0...size.width)
-        }
-    }
+    let startX: Double
+    let startY: Double
+    let width: Double
+    let height: Double
+    let color: Color
+    let speedY: Double
+    let speedX: Double
+    let spawnTime: Double
 }
 
 // MARK: - Native SwiftUI Canvas-Based Fireworks View
