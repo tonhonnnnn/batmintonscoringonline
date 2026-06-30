@@ -181,7 +181,7 @@ class MatchViewModel: ObservableObject {
     init() {
         let savedLang = UserDefaults.standard.string(forKey: "badminton_lang") ?? "th"
         self.lang = savedLang
-        self.playerNames = [...TRANSLATIONS[savedLang]!.defaultPlayers]
+        self.playerNames = TRANSLATIONS[savedLang]!.defaultPlayers
     }
     
     var strings: LanguageStrings {
@@ -354,16 +354,20 @@ class MatchViewModel: ObservableObject {
         AudioServicesPlaySystemSound(1104)
         
         // Native Apple Haptics
+        #if os(iOS)
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
+        #endif
     }
     
     private func playUndoFeedback() {
         // Deeper system tick
         AudioServicesPlaySystemSound(1105)
         
+        #if os(iOS)
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
+        #endif
     }
 }
 
