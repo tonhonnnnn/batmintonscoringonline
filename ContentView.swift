@@ -423,12 +423,14 @@ class MatchViewModel: ObservableObject {
             } else if s0 == s1 {
                 speechString = lang == "th" ? "\(s0) เท่า" : "\(s0) all"
             } else {
+                let leadingScore = max(s0, s1)
+                let trailingScore = min(s0, s1)
                 if lang == "th" {
-                    speechString = "\(s0) ต่อ \(s1)"
+                    speechString = "\(leadingScore) ต่อ \(trailingScore)"
                 } else if lang == "ja" {
-                    speechString = "\(s0) たい \(s1)"
+                    speechString = "\(leadingScore) たい \(trailingScore)"
                 } else {
-                    speechString = "\(s0), \(s1)"
+                    speechString = "\(leadingScore), \(trailingScore)"
                 }
             }
         }
