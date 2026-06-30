@@ -408,27 +408,46 @@ class MatchViewModel: ObservableObject {
                 speechString = "เริ่มเล่น ศูนย์ เท่า"
             } else if lang == "ja" {
                 speechString = "ラブ オール プレイ"
+            } else if lang == "zh" {
+                speechString = "开始比赛 零平"
+            } else if lang == "ko" {
+                speechString = "러브 올 플레이"
             } else {
                 speechString = "Love all, play"
             }
         } else {
+            let leadingScore = max(s0, s1)
+            let trailingScore = min(s0, s1)
+            
             if isMatchPoint(for: 0) {
-                speechString = lang == "th" ? "แมตช์พอยท์ \(playerNames[0])" : "Match Point \(playerNames[0])"
+                speechString = getPointAnnounce(playerIndex: 0, isMatch: true)
             } else if isMatchPoint(for: 1) {
-                speechString = lang == "th" ? "แมตช์พอยท์ \(playerNames[1])" : "Match Point \(playerNames[1])"
+                speechString = getPointAnnounce(playerIndex: 1, isMatch: true)
             } else if isSetPoint(for: 0) {
-                speechString = lang == "th" ? "เกมพอยท์ \(playerNames[0])" : "Game Point \(playerNames[0])"
+                speechString = getPointAnnounce(playerIndex: 0, isMatch: false)
             } else if isSetPoint(for: 1) {
-                speechString = lang == "th" ? "เกมพอยท์ \(playerNames[1])" : "Game Point \(playerNames[1])"
+                speechString = getPointAnnounce(playerIndex: 1, isMatch: false)
             } else if s0 == s1 {
-                speechString = lang == "th" ? "\(s0) เท่า" : "\(s0) all"
+                if lang == "th" {
+                    speechString = "\(s0) เท่า"
+                } else if lang == "ja" {
+                    speechString = "\(s0) オール"
+                } else if lang == "zh" {
+                    speechString = "\(s0) 平"
+                } else if lang == "ko" {
+                    speechString = "\(s0) 올"
+                } else {
+                    speechString = "\(s0) all"
+                }
             } else {
-                let leadingScore = max(s0, s1)
-                let trailingScore = min(s0, s1)
                 if lang == "th" {
                     speechString = "\(leadingScore) ต่อ \(trailingScore)"
                 } else if lang == "ja" {
                     speechString = "\(leadingScore) たい \(trailingScore)"
+                } else if lang == "zh" {
+                    speechString = "\(leadingScore) 比 \(trailingScore)"
+                } else if lang == "ko" {
+                    speechString = "\(leadingScore) 대 \(trailingScore)"
                 } else {
                     speechString = "\(leadingScore), \(trailingScore)"
                 }
@@ -440,6 +459,10 @@ class MatchViewModel: ObservableObject {
             utterance.voice = AVSpeechSynthesisVoice(language: "th-TH")
         } else if lang == "ja" {
             utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
+        } else if lang == "zh" {
+            utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
+        } else if lang == "ko" {
+            utterance.voice = AVSpeechSynthesisVoice(language: "ko-KR")
         } else {
             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         }
@@ -449,6 +472,23 @@ class MatchViewModel: ObservableObject {
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
         speechSynthesizer.speak(utterance)
+    }
+    
+    private func getPointAnnounce(playerIndex: Int, isMatch: Bool) -> String {
+        let name = playerNames[playerIndex]
+        if isMatch {
+            if lang == "th" { return "แมตช์พอยท์ \(name)" }
+            if lang == "ja" { return "マッチポイント \(name)" }
+            if lang == "zh" { return "赛点 \(name)" }
+            if lang == "ko" { return "매치 포인트 \(name)" }
+            return "Match Point \(name)"
+        } else {
+            if lang == "th" { return "เกมพอยท์ \(name)" }
+            if lang == "ja" { return "ゲームポイント \(name)" }
+            if lang == "zh" { return "局点 \(name)" }
+            if lang == "ko" { return "세트 포인트 \(name)" }
+            return "Game Point \(name)"
+        }
     }
     
     // MARK: - Timer Management
