@@ -539,99 +539,113 @@ struct ContentView: View {
     
     // MARK: - Landscape UI Layout
     private var landscapeLayout: some View {
-        HStack(spacing: 20) {
-            // Left Score Card
-            let leftIdx = vm.swappedSides ? 1 : 0
-            scoreCardView(playerIndex: leftIdx, alignLeft: true)
-                .frame(maxWidth: .infinity)
-            
-            // Center column controls
-            VStack(spacing: 12) {
-                // Compact header title
-                headerLogo
-                    .scaleEffect(0.8)
-                
-                // Sets log list
-                setsListView
-                    .scaleEffect(0.85)
-                    .frame(height: 90)
+        ZStack(alignment: .top) {
+            // Top-left/right control buttons pinned to safe edges
+            HStack {
+                // Switch Sides (Left)
+                Button(action: { vm.switchSides() }) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                        .frame(width: 38, height: 38)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
+                        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                }
                 
                 Spacer()
                 
-                // Stacked buttons
-                VStack(spacing: 6) {
-                    // New Match
-                    Button(action: { showingResetAlert = true }) {
-                        Text(vm.strings.btnNewMatch)
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 32)
-                            .background(Color(red: 0, green: 113/255, blue: 227/255))
-                            .cornerRadius(10)
-                    }
-                    
-                    // Undo
-                    Button(action: { vm.undo() }) {
-                        Text(vm.strings.btnUndo)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 32)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(red: 210/255, green: 210/255, blue: 215/255), lineWidth: 1))
-                            .opacity(vm.canUndo ? 1.0 : 0.4)
-                    }
-                    .disabled(!vm.canUndo)
-                    
-                    // Progress Stats
-                    Button(action: { vm.showStats = true }) {
-                        Text(vm.strings.btnProgress)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 32)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(red: 210/255, green: 210/255, blue: 215/255), lineWidth: 1))
-                    }
+                // Language switcher (Right)
+                Button(action: { vm.showLangDropdown.toggle() }) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                        .frame(width: 38, height: 38)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
+                        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
                 }
-                .padding(.bottom, 8)
             }
-            .frame(width: 160)
-            .overlay(
-                // Floating top-left/right buttons overlay on landscape
-                HStack {
-                    Button(action: { vm.switchSides() }) {
-                        Image(systemName: "arrow.left.and.right")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(red: 134/255, green: 134/255, blue: 139/255))
-                            .frame(width: 30, height: 30)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                    }
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .zIndex(5)
+            
+            // Main Content Rows
+            HStack(spacing: 32) {
+                Spacer()
+                
+                // Left Score Card
+                let leftIdx = vm.swappedSides ? 1 : 0
+                scoreCardView(playerIndex: leftIdx, alignLeft: true)
+                    .frame(maxWidth: 220)
+                    .frame(maxHeight: 220) // Proportional sizing
+                
+                // Center column controls
+                VStack(spacing: 8) {
+                    // Compact header logo
+                    headerLogo
+                        .scaleEffect(0.7)
+                        .padding(.top, 16)
                     
-                    Spacer()
+                    // Sets log list
+                    setsListView
+                        .scaleEffect(0.8)
+                        .frame(height: 70)
                     
-                    Button(action: { vm.showLangDropdown.toggle() }) {
-                        Image(systemName: "globe")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(red: 134/255, green: 134/255, blue: 139/255))
-                            .frame(width: 30, height: 30)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
+                    Spacer(minLength: 4)
+                    
+                    // Compact Actions
+                    VStack(spacing: 6) {
+                        // New Match
+                        Button(action: { showingResetAlert = true }) {
+                            Text(vm.strings.btnNewMatch)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 120, height: 30)
+                                .background(Color(red: 0, green: 113/255, blue: 227/255))
+                                .clipShape(Capsule())
+                        }
+                        
+                        // Undo & Progress side-by-side
+                        HStack(spacing: 6) {
+                            Button(action: { vm.undo() }) {
+                                Text(vm.strings.btnUndo)
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                                    .frame(width: 57, height: 28)
+                                    .background(Color.white.opacity(0.8))
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(Color.black.opacity(0.08), lineWidth: 0.5))
+                            }
+                            .disabled(!vm.canUndo)
+                            .opacity(vm.canUndo ? 1.0 : 0.4)
+                            
+                            Button(action: { vm.showStats = true }) {
+                                Text(vm.strings.btnProgress)
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                                    .frame(width: 57, height: 28)
+                                    .background(Color.white.opacity(0.8))
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(Color.black.opacity(0.08), lineWidth: 0.5))
+                            }
+                        }
                     }
                 }
-                .padding(.horizontal, -32)
-                .padding(.top, -10)
-                , alignment: .top
-            )
-            
-            // Right Score Card
-            let rightIdx = vm.swappedSides ? 0 : 1
-            scoreCardView(playerIndex: rightIdx, alignLeft: false)
-                .frame(maxWidth: .infinity)
+                .frame(width: 140)
+                
+                // Right Score Card
+                let rightIdx = vm.swappedSides ? 0 : 1
+                scoreCardView(playerIndex: rightIdx, alignLeft: false)
+                    .frame(maxWidth: 220)
+                    .frame(maxHeight: 220) // Proportional sizing
+                
+                Spacer()
+            }
+            .padding(.top, 40)
+            .padding(.bottom, 8)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
