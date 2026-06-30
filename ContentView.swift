@@ -382,7 +382,7 @@ struct ContentView: View {
     
     private var headerLogo: some View {
         Group {
-            if let uiImage = UIImage(named: "logo") ?? UIImage(contentsOfFile: Bundle.main.path(forResource: "logo", ofType: "jpg") ?? "") {
+            if let uiImage = UIImage(named: "logo1") ?? UIImage(contentsOfFile: Bundle.main.path(forResource: "logo1", ofType: "png") ?? "") {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
@@ -681,6 +681,8 @@ struct ContentView: View {
                             .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
                             .tracking(-2)
                             .scaleEffect(playerIndex == 0 ? leftScale : rightScale)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                             .id("score-\(playerIndex)-\(vm.scores[playerIndex])") // forces layout pop transition
                         
                         Spacer()
