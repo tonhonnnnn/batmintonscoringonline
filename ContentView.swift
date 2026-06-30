@@ -1505,7 +1505,7 @@ struct WinnerOverlayView: View {
         for i in 0..<33 {
             let delay = Double(i) * 0.3
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                let generator = UNotificationFeedbackGenerator()
+                let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
             }
         }
