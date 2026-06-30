@@ -778,42 +778,48 @@ header h1 span {
 @media (orientation: landscape) and (max-height: 560px) {
   body {
     padding: 0;
+    margin: 0;
     align-items: stretch;
     justify-content: stretch;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
   
   .app-container {
     max-width: 100%;
     width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     border-radius: 0;
     border: none;
     box-shadow: none;
-    padding: 12px 24px;
+    padding: 10px 20px;
     display: grid;
     grid-template-columns: 1fr 180px 1fr;
     grid-template-rows: auto 1fr auto;
-    gap: 4px 20px;
+    gap: 2px 16px;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   
   /* Buttons position adjustments inside landscape container */
   .btn-icon-switch {
-    top: 12px;
+    top: 10px;
     left: 20px;
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
   }
   
   .btn-icon-lang {
-    top: 12px;
+    top: 10px;
     right: 20px;
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
   }
   
   .lang-dropdown {
-    top: 52px;
+    top: 48px;
     right: 20px;
   }
   
@@ -826,7 +832,7 @@ header h1 span {
   }
   
   header h1 {
-    font-size: 15px;
+    font-size: 14px;
     letter-spacing: 0px;
   }
   
@@ -850,7 +856,8 @@ header h1 span {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 8px;
+    gap: 4px;
+    overflow: hidden;
   }
   
   #wrapper-p2 {
@@ -860,35 +867,47 @@ header h1 span {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 8px;
+    gap: 4px;
+    overflow: hidden;
   }
   
   .score-card {
     flex: 1;
     width: 100%;
-    aspect-ratio: auto;
+    height: 100% !important;
+    aspect-ratio: unset !important; /* Force reset aspect ratio to prevent overflow */
     border-radius: var(--radius-inner);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
   .score-number {
-    font-size: 26vh; /* Scale score relative to landscape height */
+    font-size: clamp(60px, 24vh, 120px) !important; /* Responsive but safe scale */
     letter-spacing: -2px;
+    line-height: 1 !important;
+    margin: 0;
+    padding: 0;
   }
   
   .service-indicator {
-    top: 10px;
-    padding: 2px 8px;
-    font-size: 10px;
+    top: 8px;
+    padding: 2px 6px;
+    font-size: 9px;
   }
   
   .player-info {
     margin-top: 0;
+    height: 24px;
+    display: flex;
+    align-items: center;
   }
   
   .player-name {
-    font-size: 14px;
-    padding: 2px 6px;
+    font-size: 13px;
+    padding: 1px 4px;
   }
   
   /* Center column middle: SETS section */
@@ -897,31 +916,37 @@ header h1 span {
     grid-row: 2 / 3;
     margin: 4px 0;
     align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
   }
   
   .sets-title {
-    font-size: 11px;
+    font-size: 10px;
     margin-bottom: 2px;
     letter-spacing: 0.5px;
   }
   
   .sets-list {
-    gap: 4px;
+    gap: 2px;
+    max-width: 100%;
+    width: 150px;
   }
   
   .set-row {
-    font-size: 14px;
-    height: 22px;
+    font-size: 13px;
+    height: 20px;
   }
   
   .set-number {
-    width: 18px;
-    height: 18px;
-    font-size: 10px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
   }
   
   .set-score {
-    width: 30px;
+    width: 25px;
   }
   
   /* Center column bottom: Controls footer */
@@ -929,14 +954,16 @@ header h1 span {
     grid-column: 2 / 3;
     grid-row: 3 / 4;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 3px;
+    margin-top: 2px;
+    width: 100%;
   }
   
   .btn {
-    padding: 8px 12px;
-    font-size: 12px;
-    border-radius: 12px;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 10px;
+    line-height: 1.2;
   }
   
   /* Modal adjustment for landscape */
