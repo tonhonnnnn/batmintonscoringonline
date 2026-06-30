@@ -376,6 +376,33 @@ struct ContentView: View {
     @StateObject private var vm = MatchViewModel()
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var showingResetAlert = false
+    @State private var footerActiveIndex: Int = 1
+    @State private var leftScale: CGFloat = 1.0
+    @State private var rightScale: CGFloat = 1.0
+    
+    private var headerLogo: some View {
+        Group {
+            if let uiImage = UIImage(named: "logo") ?? UIImage(contentsOfFile: Bundle.main.path(forResource: "logo", ofType: "jpg") ?? "") {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.6), lineWidth: 1.5))
+                    .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+            } else {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: "sportscourt.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color(red: 0, green: 113/255, blue: 227/255))
+                    )
+                    .overlay(Circle().stroke(Color.white.opacity(0.6), lineWidth: 1.5))
+            }
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -420,6 +447,30 @@ struct ContentView: View {
                 secondaryButton: .cancel()
             )
         }
+        .onChange(of: vm.scores) { _ in
+            // Animate left score changes
+            if vm.scores[0] > 0 {
+                withAnimation(.spring(response: 0.18, dampingFraction: 0.45, blendDuration: 0)) {
+                    leftScale = 1.15
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.6, blendDuration: 0)) {
+                        leftScale = 1.0
+                    }
+                }
+            }
+            // Animate right score changes
+            if vm.scores[1] > 0 {
+                withAnimation(.spring(response: 0.18, dampingFraction: 0.45, blendDuration: 0)) {
+                    rightScale = 1.15
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.6, blendDuration: 0)) {
+                        rightScale = 1.0
+                    }
+                }
+            }
+        }
     }
     
     // MARK: - Portrait UI Layout
@@ -442,10 +493,7 @@ struct ContentView: View {
                 Spacer()
                 
                 // Brand Logo Title
-                Text(vm.strings.appTitle)
-                    .font(.system(size: 20, weight: .bold, design: .default))
-                    .tracking(1)
-                    .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                headerLogo
                 
                 Spacer()
                 
@@ -499,10 +547,8 @@ struct ContentView: View {
             // Center column controls
             VStack(spacing: 12) {
                 // Compact header title
-                Text(vm.strings.appTitle)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                    .padding(.top, 4)
+                headerLogo
+                    .scaleEffect(0.8)
                 
                 // Sets log list
                 setsListView
@@ -631,11 +677,11 @@ struct ContentView: View {
                         
                         Spacer()
                         
-                        // Enormous bold score digit display
                         Text(String(format: "%02d", vm.scores[playerIndex]))
                             .font(.system(size: verticalSizeClass == .compact ? 90 : 96, weight: .heavy, design: .default))
                             .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
                             .tracking(-2)
+                            .scaleEffect(playerIndex == 0 ? leftScale : rightScale)
                             .id("score-\(playerIndex)-\(vm.scores[playerIndex])") // forces layout pop transition
                         
                         Spacer()
@@ -706,51 +752,68 @@ struct ContentView: View {
     
     // Floating "Liquid Glass" translucent menu bar
     private var footerControlsContainer: some View {
-        HStack(spacing: 8) {
-            // New Match
-            Button(action: { showingResetAlert = true }) {
-                HStack(spacing: 4) {
-                    Text(vm.strings.btnNewMatch)
-                }
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(Color(red: 0, green: 113/255, blue: 227/255))
-                .clipShape(Capsule())
-            }
+        GeometryReader { geo in
+            let width = geo.size.width
+            let buttonWidth = (width - 16) / 3
             
-            // Undo
-            Button(action: { vm.undo() }) {
-                Text(vm.strings.btnUndo)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(Color.white.opacity(0.7))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(Color(red: 210/255, green: 210/255, blue: 215/255), lineWidth: 0.5))
+            ZStack(alignment: .leading) {
+                // Translucent Capsule Container Background (Liquid Glass look)
+                Capsule()
+                    .fill(Color.white.opacity(0.3))
+                    .background(.ultraThinMaterial)
+                    .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 0.5))
+                
+                // Sliding Liquid Glass Pill Background!
+                Capsule()
+                    .fill(Color.white.opacity(0.85))
+                    .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
+                    .frame(width: buttonWidth - 4, height: 38)
+                    .padding(.leading, 2)
+                    .offset(x: CGFloat(footerActiveIndex) * buttonWidth)
+                    .animation(.spring(response: 0.32, dampingFraction: 0.75, blendDuration: 0), value: footerActiveIndex)
+                
+                // HStack of buttons
+                HStack(spacing: 0) {
+                    // New Match Button
+                    Button(action: {
+                        footerActiveIndex = 0
+                        showingResetAlert = true
+                    }) {
+                        Text(vm.strings.btnNewMatch)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(footerActiveIndex == 0 ? Color(red: 0, green: 113/255, blue: 227/255) : Color(red: 29/255, green: 29/255, blue: 31/255))
+                            .frame(width: buttonWidth, height: 42)
+                    }
+                    
+                    // Undo Button
+                    Button(action: {
+                        footerActiveIndex = 1
+                        vm.undo()
+                    }) {
+                        Text(vm.strings.btnUndo)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(footerActiveIndex == 1 ? Color(red: 29/255, green: 29/255, blue: 31/255) : Color(red: 134/255, green: 134/255, blue: 139/255))
+                            .frame(width: buttonWidth, height: 42)
+                    }
+                    .disabled(!vm.canUndo)
                     .opacity(vm.canUndo ? 1.0 : 0.4)
+                    
+                    // Progress Button
+                    Button(action: {
+                        footerActiveIndex = 2
+                        vm.showStats = true
+                    }) {
+                        Text(vm.strings.btnProgress)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(footerActiveIndex == 2 ? Color(red: 29/255, green: 29/255, blue: 31/255) : Color(red: 134/255, green: 134/255, blue: 139/255))
+                            .frame(width: buttonWidth, height: 42)
+                    }
+                }
             }
-            .disabled(!vm.canUndo)
-            
-            // Progress Stats
-            Button(action: { vm.showStats = true }) {
-                Text(vm.strings.btnProgress)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(Color.white.opacity(0.7))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(Color(red: 210/255, green: 210/255, blue: 215/255), lineWidth: 0.5))
-            }
+            .frame(height: 42)
+            .padding(.horizontal, 4)
         }
-        .padding(8)
-        .background(.ultraThinMaterial) // Liquid Glass blur!
-        .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 4)
-        .overlay(Capsule().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
+        .frame(height: 42)
         .padding(.horizontal, 24)
         .padding(.bottom, 16)
     }
@@ -1008,6 +1071,10 @@ struct WinnerOverlayView: View {
                 .background(.ultraThinMaterial)
                 .edgesIgnoringSafeArea(.all)
             
+            // Native Fireworks
+            FireworkView()
+                .edgesIgnoringSafeArea(.all)
+            
             // Custom Falling Confetti particle layer
             TimelineView(.animation) { timeline in
                 Canvas { context, size in
@@ -1105,11 +1172,28 @@ struct WinnerOverlayView: View {
     }
     
     private func playCelebrationMelody() {
-        // Sequenced System Beeps: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
-        let notes: [UInt32] = [1052, 1053, 1054, 1057] // Standard iOS system sounds mapped
+        #if os(iOS)
+        // Strong notification success haptic
+        let notificationGenerator = UINotificationFeedbackGenerator()
+        notificationGenerator.notificationOccurred(.success)
+        
+        // Sequence of heavy haptic impulses to simulate a strong physical rumble
+        let impactGenerator = UIImpactFeedbackGenerator(style: .heavy)
+        impactGenerator.prepare()
+        impactGenerator.impactOccurred()
+        
+        for i in 1...5 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.12) {
+                impactGenerator.impactOccurred()
+            }
+        }
+        #endif
+        
+        // Sequenced System Beeps
+        let notes: [UInt32] = [1052, 1053, 1054, 1057]
         for i in 0..<notes.count {
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.15) {
-                AudioServicesPlaySystemSound(1104) // native beep click
+                AudioServicesPlaySystemSound(1104)
             }
         }
     }
@@ -1143,6 +1227,87 @@ struct ConfettiParticle {
             x = Double.random(in: 0...size.width)
         }
     }
+}
+
+// MARK: - Native SwiftUI Canvas-Based Fireworks View
+struct FireworkView: View {
+    @State private var particles: [ExplodingParticle] = []
+    let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
+    
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            Canvas { context, size in
+                for p in particles {
+                    let age = timeline.date.timeIntervalSince(p.spawnDate)
+                    if age < p.lifetime {
+                        let progress = age / p.lifetime
+                        let currentRadius = p.maxRadius * progress
+                        let x = p.centerX + cos(p.angle) * currentRadius
+                        let y = p.centerY + sin(p.angle) * currentRadius + (p.gravity * age * age)
+                        let opacity = 1.0 - progress
+                        
+                        context.opacity = opacity
+                        context.fill(
+                            Path(ellipseIn: CGRect(x: x - p.size/2, y: y - p.size/2, width: p.size, height: p.size)),
+                            with: .color(p.color)
+                        )
+                    }
+                }
+            }
+        }
+        .onReceive(timer) { _ in
+            spawnFirework()
+        }
+        .onAppear {
+            // Spawn initial bursts
+            for _ in 0..<3 {
+                spawnFirework()
+            }
+        }
+    }
+    
+    private func spawnFirework() {
+        let centerX = CGFloat.random(in: 40...340)
+        let centerY = CGFloat.random(in: 80...320)
+        let colors: [Color] = [.red, .blue, .yellow, .green, .orange, .pink, .purple, Color(red: 0, green: 113/255, blue: 227/255)]
+        let color = colors.randomElement()!
+        
+        let now = Date()
+        let count = 16
+        for i in 0..<count {
+            let angle = Double(i) * (2 * Double.pi / Double(count))
+            let speed = Double.random(in: 60...130)
+            let particle = ExplodingParticle(
+                centerX: centerX,
+                centerY: centerY,
+                angle: angle,
+                maxRadius: speed,
+                size: CGFloat.random(in: 3...6),
+                color: color,
+                spawnDate: now,
+                lifetime: Double.random(in: 0.7...1.0),
+                gravity: CGFloat.random(in: 25...40)
+            )
+            particles.append(particle)
+        }
+        
+        // Keep array size light
+        if particles.count > 250 {
+            particles.removeFirst(80)
+        }
+    }
+}
+
+struct ExplodingParticle {
+    let centerX: CGFloat
+    let centerY: CGFloat
+    let angle: Double
+    let maxRadius: Double
+    let size: CGFloat
+    let color: Color
+    let spawnDate: Date
+    let lifetime: Double
+    let gravity: CGFloat
 }
 
 // MARK: - SwiftUI Preview
