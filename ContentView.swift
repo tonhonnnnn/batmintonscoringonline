@@ -1398,6 +1398,8 @@ struct StatsSheetView: View {
 struct WinnerOverlayView: View {
     @ObservedObject var vm: MatchViewModel
     @State private var particles: [ConfettiParticle] = []
+    @State private var celebrationTimer: Timer? = nil
+    @State private var tickCount: Int = 0
     
     var body: some View {
         ZStack {
@@ -1488,38 +1490,50 @@ struct WinnerOverlayView: View {
         .onAppear {
             generateConfetti()
             playCelebrationMelody()
-            triggerWinnerHaptic()
+            startCelebrationHaptics()
+        }
+        .onDisappear {
+            stopCelebrationHaptics()
         }
     }
     
-    private func triggerWinnerHaptic() {
+    private func startCelebrationHaptics() {
         #if os(iOS)
-        // 10-second continuous vibration loop (triggered every 1.5 seconds)
-        for i in 0..<7 {
-            let delay = Double(i) * 1.5
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+        stopCelebrationHaptics()
+        
+        tickCount = 0
+        // Play tick 0 immediately
+        AudioServicesPlaySystemSound(4095)
+        let firstGen = UINotificationFeedbackGenerator()
+        firstGen.notificationOccurred(.success)
+        
+        celebrationTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
+            tickCount += 1
+            
+            // Limit to 10 minutes (600 seconds -> 4000 ticks)
+            if tickCount >= 4000 {
+                stopCelebrationHaptics()
+                return
+            }
+            
+            if tickCount % 10 == 0 {
                 AudioServicesPlaySystemSound(4095)
             }
-        }
-        
-        // Staggered success notification pulses for 10 seconds
-        for i in 0..<33 {
-            let delay = Double(i) * 0.3
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            
+            if tickCount % 2 == 0 {
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
-            }
-        }
-            
-        // Staggered heavy impact pulses offset by 0.15 seconds for 10 seconds
-        for i in 0..<33 {
-            let delay = Double(i) * 0.3 + 0.15
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            } else {
                 let impact = UIImpactFeedbackGenerator(style: .heavy)
                 impact.impactOccurred(intensity: 1.0)
             }
         }
         #endif
+    }
+    
+    private func stopCelebrationHaptics() {
+        celebrationTimer?.invalidate()
+        celebrationTimer = nil
     }
     
     private func getSetWins() -> [Int] {
