@@ -707,7 +707,7 @@ struct ContentView: View {
         }
         .alert(isPresented: $showingResetAlert) {
             Alert(
-                title: Text("Batminton Score"),
+                title: Text("Badminton Score"),
                 message: Text(vm.strings.confirmReset),
                 primaryButton: .destructive(Text(vm.strings.btnNewMatch)) {
                     vm.resetMatch()
