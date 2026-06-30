@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import AudioToolbox
+import AVFoundation
 
 // MARK: - Localizable Strings Dictionary
 struct LanguageStrings {
@@ -151,6 +152,7 @@ struct MatchStateSnapshot {
     let setPointHistories: [[Int]]
     let customizedNames: [Bool]
     let playerNames: [String]
+    let matchDuration: TimeInterval
 }
 
 // MARK: - Game State ViewModel
@@ -171,6 +173,12 @@ class MatchViewModel: ObservableObject {
     @Published var pointHistory: [Int] = [] // All points scored
     @Published var setPointHistories: [[Int]] = [[], [], []] // Point scorer indices per set
     @Published var lang: String
+    @Published var maxPoints: Int = 21
+    @Published var setsToWin: Int = 2
+    @Published var isVoiceEnabled: Bool = true
+    @Published var matchDuration: TimeInterval = 0
+    private var timer: Timer? = nil
+    private let speechSynthesizer = AVSpeechSynthesizer()
     
     @Published var showStats: Bool = false
     @Published var showWinnerOverlay: Bool = false
@@ -182,6 +190,15 @@ class MatchViewModel: ObservableObject {
         let savedLang = UserDefaults.standard.string(forKey: "badminton_lang") ?? "th"
         self.lang = savedLang
         self.playerNames = TRANSLATIONS[savedLang]!.defaultPlayers
+        
+        #if os(iOS)
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to set AVAudioSession category: \(error)")
+        }
+        #endif
     }
     
     var strings: LanguageStrings {
@@ -225,7 +242,8 @@ class MatchViewModel: ObservableObject {
             pointHistory: pointHistory,
             setPointHistories: setPointHistories,
             customizedNames: customizedNames,
-            playerNames: playerNames
+            playerNames: playerNames,
+            matchDuration: matchDuration
         )
         historyStack.append(snapshot)
     }
@@ -233,6 +251,7 @@ class MatchViewModel: ObservableObject {
     func scorePoint(playerIndex: Int) {
         guard !isMatchOver else { return }
         
+        startTimerIfNeeded()
         pushHistory()
         playFeedback()
         
@@ -243,6 +262,7 @@ class MatchViewModel: ObservableObject {
         setPointHistories[activeSet].append(playerIndex)
         
         checkSetStatus()
+        speakScore()
     }
     
     private func checkSetStatus() {
@@ -250,14 +270,16 @@ class MatchViewModel: ObservableObject {
         let s1 = scores[1]
         var winner: Int? = nil
         
-        // Standard badminton rules: first to 21, win by 2, cap at 30.
-        if s0 >= 21 && (s0 - s1 >= 2) {
+        let winPoint = maxPoints
+        let maxCap = maxPoints + 9
+        
+        if s0 >= winPoint && (s0 - s1 >= 2) {
             winner = 0
-        } else if s1 >= 21 && (s1 - s0 >= 2) {
+        } else if s1 >= winPoint && (s1 - s0 >= 2) {
             winner = 1
-        } else if s0 == 30 {
+        } else if s0 == maxCap {
             winner = 0
-        } else if s1 == 30 {
+        } else if s1 == maxCap {
             winner = 1
         }
         
@@ -273,10 +295,10 @@ class MatchViewModel: ObservableObject {
                 }
             }
             
-            // Best of 3 sets
-            if wins[0] == 2 || wins[1] == 2 {
+            if wins[0] == setsToWin || wins[1] == setsToWin {
                 isMatchOver = true
                 showWinnerOverlay = true
+                stopTimer()
             } else {
                 activeSet += 1
                 scores = [0, 0]
@@ -301,10 +323,13 @@ class MatchViewModel: ObservableObject {
         setPointHistories = snapshot.setPointHistories
         customizedNames = snapshot.customizedNames
         playerNames = snapshot.playerNames
+        matchDuration = snapshot.matchDuration
         
         if !isMatchOver {
             showWinnerOverlay = false
         }
+        
+        speakScore()
     }
     
     func switchSides() {
@@ -369,6 +394,151 @@ class MatchViewModel: ObservableObject {
         generator.impactOccurred()
         #endif
     }
+    
+    // MARK: - Voice Score Announcer
+    func speakScore() {
+        guard isVoiceEnabled else { return }
+        
+        let speechString: String
+        let s0 = scores[0]
+        let s1 = scores[1]
+        
+        if s0 == 0 && s1 == 0 {
+            if lang == "th" {
+                speechString = "เริ่มเล่น ศูนย์ เท่า"
+            } else if lang == "ja" {
+                speechString = "ラブ オール プレイ"
+            } else {
+                speechString = "Love all, play"
+            }
+        } else {
+            if isMatchPoint(for: 0) {
+                speechString = lang == "th" ? "แมตช์พอยท์ \(playerNames[0])" : "Match Point \(playerNames[0])"
+            } else if isMatchPoint(for: 1) {
+                speechString = lang == "th" ? "แมตช์พอยท์ \(playerNames[1])" : "Match Point \(playerNames[1])"
+            } else if isSetPoint(for: 0) {
+                speechString = lang == "th" ? "เกมพอยท์ \(playerNames[0])" : "Game Point \(playerNames[0])"
+            } else if isSetPoint(for: 1) {
+                speechString = lang == "th" ? "เกมพอยท์ \(playerNames[1])" : "Game Point \(playerNames[1])"
+            } else if s0 == s1 {
+                speechString = lang == "th" ? "\(s0) เท่า" : "\(s0) all"
+            } else {
+                if lang == "th" {
+                    speechString = "\(s0) ต่อ \(s1)"
+                } else if lang == "ja" {
+                    speechString = "\(s0) たい \(s1)"
+                } else {
+                    speechString = "\(s0), \(s1)"
+                }
+            }
+        }
+        
+        let utterance = AVSpeechUtterance(string: speechString)
+        if lang == "th" {
+            utterance.voice = AVSpeechSynthesisVoice(language: "th-TH")
+        } else if lang == "ja" {
+            utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
+        } else {
+            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        }
+        utterance.rate = 0.52
+        
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        speechSynthesizer.speak(utterance)
+    }
+    
+    // MARK: - Timer Management
+    func startTimerIfNeeded() {
+        guard timer == nil else { return }
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self, !self.isMatchOver else { return }
+            self.matchDuration += 1
+        }
+    }
+    
+    func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
+    var matchDurationString: String {
+        let hours = Int(matchDuration) / 3600
+        let minutes = (Int(matchDuration) % 3600) / 60
+        let seconds = Int(matchDuration) % 60
+        
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+    
+    // MARK: - Set & Match Point Helpers
+    func isSetPoint(for playerIndex: Int) -> Bool {
+        if isMatchOver { return false }
+        let myScore = scores[playerIndex]
+        let opponentScore = scores[1 - playerIndex]
+        let winPoint = maxPoints
+        
+        if myScore >= winPoint - 1 {
+            if myScore > opponentScore && (myScore - opponentScore >= 1) {
+                return true
+            }
+            if myScore == winPoint - 1 && opponentScore < winPoint - 1 {
+                return true
+            }
+        }
+        return false
+    }
+    
+    func isMatchPoint(for playerIndex: Int) -> Bool {
+        guard isSetPoint(for: playerIndex) else { return false }
+        var wins = [0, 0]
+        for w in setWinners {
+            if let winnerIndex = w {
+                wins[winnerIndex] += 1
+            }
+        }
+        return wins[playerIndex] == setsToWin - 1
+    }
+    
+    // MARK: - Settings Translation Helpers
+    func getSettingsString(key: String) -> String {
+        let thStrings = [
+            "settings": "ตั้งค่าการแข่งขัน",
+            "maxPoints": "เล่นถึง (แต้ม)",
+            "setsToWin": "จำนวนเซตตัดสิน",
+            "voiceAnnouncer": "เสียงขานคะแนน",
+            "bestOf3": "ชนะ 2 ใน 3 เซต",
+            "bestOf1": "เซตเดียวจบ",
+            "enabled": "เปิด",
+            "disabled": "ปิด"
+        ]
+        let enStrings = [
+            "settings": "Match Settings",
+            "maxPoints": "Points Limit",
+            "setsToWin": "Match Format",
+            "voiceAnnouncer": "Voice Announcer",
+            "bestOf3": "Best of 3 Sets",
+            "bestOf1": "Best of 1 Set",
+            "enabled": "On",
+            "disabled": "Off"
+        ]
+        let jaStrings = [
+            "settings": "試合設定",
+            "maxPoints": "ゲームポイント",
+            "setsToWin": "マッチ形式",
+            "voiceAnnouncer": "主審音声",
+            "bestOf3": "3ゲーム中2ゲーム先取",
+            "bestOf1": "1ゲーム先取",
+            "enabled": "オン",
+            "disabled": "オフ"
+        ]
+        let dict = lang == "th" ? thStrings : (lang == "ja" ? jaStrings : enStrings)
+        return dict[key] ?? key
+    }
 }
 
 // MARK: - Main Application View
@@ -379,6 +549,7 @@ struct ContentView: View {
     @State private var footerActiveIndex: Int = 1
     @State private var leftScale: CGFloat = 1.0
     @State private var rightScale: CGFloat = 1.0
+    @State private var showSettingsSheet = false
     
     private var headerLogo: some View {
         Group {
@@ -437,6 +608,9 @@ struct ContentView: View {
         .sheet(isPresented: $vm.showStats) {
             StatsSheetView(vm: vm)
         }
+        .sheet(isPresented: $showSettingsSheet) {
+            SettingsSheetView(vm: vm)
+        }
         .alert(isPresented: $showingResetAlert) {
             Alert(
                 title: Text("Batminton Score"),
@@ -492,26 +666,47 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                // Brand Logo Title
-                headerLogo
+                // Brand Logo Title & Timer
+                VStack(spacing: 6) {
+                    headerLogo
+                    
+                    Text(vm.matchDurationString)
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(red: 134/255, green: 134/255, blue: 139/255))
+                }
                 
                 Spacer()
                 
-                // Language switcher (Right)
-                Button(action: { vm.showLangDropdown.toggle() }) {
-                    Image(systemName: "globe")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                        .frame(width: 40, height: 40)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
-                        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                // Settings & Language Row
+                HStack(spacing: 8) {
+                    // Settings Button
+                    Button(action: { showSettingsSheet = true }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                            .frame(width: 40, height: 40)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
+                            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                    }
+                    
+                    // Language switcher (Right)
+                    Button(action: { vm.showLangDropdown.toggle() }) {
+                        Image(systemName: "globe")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                            .frame(width: 40, height: 40)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
+                            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                    }
                 }
             }
             .padding(.horizontal, 24)
             .padding(.top, 32) // Pushes cards down from notch/dynamic island
-            .padding(.bottom, 32)
+            .padding(.bottom, 24)
             
             // Score Cards Grid
             HStack(spacing: 20) {
@@ -659,12 +854,39 @@ struct ContentView: View {
             // Card Tap Target
             Button(action: { vm.scorePoint(playerIndex: playerIndex) }) {
                 ZStack {
+                    let isSetPt = vm.isSetPoint(for: playerIndex)
+                    let isMatchPt = vm.isMatchPoint(for: playerIndex)
+                    
                     RoundedRectangle(cornerRadius: 28)
                         .fill(Color.white)
-                        .shadow(color: Color.black.opacity(0.04), radius: 15, x: 0, y: 8)
+                        .shadow(color: isMatchPt ? Color(red: 255/255, green: 179/255, blue: 0/255).opacity(0.3) : (isSetPt ? Color(red: 255/255, green: 115/255, blue: 0/255).opacity(0.2) : Color.black.opacity(0.04)), radius: isSetPt ? 20 : 15, x: 0, y: 8)
                         .overlay(
                             RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color.black.opacity(0.02), lineWidth: 1)
+                                .stroke(isMatchPt ? Color(red: 255/255, green: 179/255, blue: 0/255).opacity(0.8) : (isSetPt ? Color(red: 255/255, green: 115/255, blue: 0/255).opacity(0.6) : Color.black.opacity(0.02)), lineWidth: isSetPt ? 2.5 : 1)
+                        )
+                        .overlay(
+                            VStack {
+                                if isMatchPt {
+                                    Text("MATCH POINT")
+                                        .font(.system(size: 9, weight: .black))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(Color(red: 255/255, green: 179/255, blue: 0/255))
+                                        .clipShape(Capsule())
+                                        .padding(.top, -10)
+                                } else if isSetPt {
+                                    Text("SET POINT")
+                                        .font(.system(size: 9, weight: .black))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(Color(red: 255/255, green: 115/255, blue: 0/255))
+                                        .clipShape(Capsule())
+                                        .padding(.top, -10)
+                                }
+                            },
+                            alignment: .top
                         )
                     
                     VStack {
@@ -1325,4 +1547,45 @@ struct ExplodingParticle {
 // MARK: - SwiftUI Preview
 #Preview {
     ContentView()
+}
+
+// MARK: - Match Rules & Voice Announcer Settings Sheet
+struct SettingsSheetView: View {
+    @ObservedObject var vm: MatchViewModel
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text(vm.getSettingsString(key: "settings"))) {
+                    Picker(vm.getSettingsString(key: "maxPoints"), selection: $vm.maxPoints) {
+                        Text("11").tag(11)
+                        Text("15").tag(15)
+                        Text("21").tag(21)
+                    }
+                    .pickerStyle(.segmented)
+                    
+                    Picker(vm.getSettingsString(key: "setsToWin"), selection: $vm.setsToWin) {
+                        Text(vm.getSettingsString(key: "bestOf1")).tag(1)
+                        Text(vm.getSettingsString(key: "bestOf3")).tag(2)
+                    }
+                    .pickerStyle(.menu)
+                    
+                    Toggle(vm.getSettingsString(key: "voiceAnnouncer"), isOn: $vm.isVoiceEnabled)
+                        .toggleStyle(SwitchToggleStyle(onTintColor: Color(red: 0, green: 113/255, blue: 227/255)))
+                }
+            }
+            .navigationTitle(vm.getSettingsString(key: "settings"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                        Text(vm.lang == "th" ? "เสร็จสิ้น" : "Done")
+                            .bold()
+                            .foregroundColor(Color(red: 0, green: 113/255, blue: 227/255))
+                    }
+                }
+            }
+        }
+    }
 }
