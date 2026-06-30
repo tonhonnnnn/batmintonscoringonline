@@ -1094,8 +1094,8 @@ struct ContentView: View {
             ZStack(alignment: .leading) {
                 // Translucent Capsule Container Background (Liquid Glass look)
                 Capsule()
-                    .fill(Color.white.opacity(0.3))
-                    .background(.ultraThinMaterial)
+                    .fill(Color.white.opacity(0.15))
+                    .background(.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 0.5))
                 
                 // Sliding Liquid Glass Pill Background!
@@ -1146,6 +1146,7 @@ struct ContentView: View {
                 }
             }
             .frame(height: 42)
+            .clipShape(Capsule())
             .padding(.horizontal, 4)
         }
         .frame(height: 42)
