@@ -1487,7 +1487,29 @@ struct WinnerOverlayView: View {
         .onAppear {
             generateConfetti()
             playCelebrationMelody()
+            triggerWinnerHaptic()
         }
+    }
+    
+    private func triggerWinnerHaptic() {
+        #if os(iOS)
+        // Continuous strong vibration (System Sound 4095 is standard vibrate)
+        AudioServicesPlaySystemSound(4095)
+        
+        // Massive staggered sequence of heavy and success haptic rumble
+        for delay in [0.0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35, 1.5, 1.65, 1.8, 1.95] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
+        }
+        for delay in [0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95, 1.1, 1.25, 1.4, 1.55, 1.7, 1.85, 2.0] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                let impact = UIImpactFeedbackGenerator(style: .heavy)
+                impact.impactOccurred(intensity: 1.0)
+            }
+        }
+        #endif
     }
     
     private func getSetWins() -> [Int] {
@@ -1564,7 +1586,7 @@ struct ConfettiParticle {
 // MARK: - Native SwiftUI Canvas-Based Fireworks View
 struct FireworkView: View {
     @State private var particles: [ExplodingParticle] = []
-    let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
+    let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
     
     var body: some View {
         TimelineView(.animation) { timeline in
@@ -1588,11 +1610,12 @@ struct FireworkView: View {
             }
         }
         .onReceive(timer) { _ in
-            spawnFirework()
+            for _ in 0..<Int.random(in: 1...2) {
+                spawnFirework()
+            }
         }
         .onAppear {
-            // Spawn initial bursts
-            for _ in 0..<3 {
+            for _ in 0..<5 {
                 spawnFirework()
             }
         }
@@ -1601,31 +1624,39 @@ struct FireworkView: View {
     private func spawnFirework() {
         let centerX = CGFloat.random(in: 40...340)
         let centerY = CGFloat.random(in: 80...320)
-        let colors: [Color] = [.red, .blue, .yellow, .green, .orange, .pink, .purple, Color(red: 0, green: 113/255, blue: 227/255)]
+        let colors: [Color] = [
+            Color(red: 255/255, green: 59/255, blue: 48/255),    // Neon Red
+            Color(red: 255/255, green: 149/255, blue: 0/255),   // Neon Orange
+            Color(red: 255/255, green: 204/255, blue: 0/255),   // Neon Yellow
+            Color(red: 52/255, green: 199/255, blue: 89/255),    // Neon Green
+            Color(red: 0/255, green: 199/255, blue: 190/255),   // Neon Teal
+            Color(red: 50/255, green: 173/255, blue: 230/255),   // Neon Blue
+            Color(red: 175/255, green: 82/255, blue: 222/255),  // Neon Purple
+            Color(red: 255/255, green: 45/255, blue: 85/255)    // Neon Pink
+        ]
         let color = colors.randomElement()!
         
         let now = Date()
-        let count = 16
+        let count = 28
         for i in 0..<count {
             let angle = Double(i) * (2 * Double.pi / Double(count))
-            let speed = Double.random(in: 60...130)
+            let speed = Double.random(in: 70...170)
             let particle = ExplodingParticle(
                 centerX: centerX,
                 centerY: centerY,
                 angle: angle,
                 maxRadius: speed,
-                size: CGFloat.random(in: 3...6),
+                size: CGFloat.random(in: 4...8),
                 color: color,
                 spawnDate: now,
-                lifetime: Double.random(in: 0.7...1.0),
-                gravity: CGFloat.random(in: 25...40)
+                lifetime: Double.random(in: 0.8...1.3),
+                gravity: CGFloat.random(in: 30...50)
             )
             particles.append(particle)
         }
         
-        // Keep array size light
-        if particles.count > 250 {
-            particles.removeFirst(80)
+        if particles.count > 500 {
+            particles.removeFirst(100)
         }
     }
 }
