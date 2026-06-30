@@ -693,22 +693,8 @@ struct ContentView: View {
     private var portraitLayout: some View {
         VStack(spacing: 0) {
             // Navigation Header (Liquid Glass style)
-            HStack {
-                // Switch Sides (Left)
-                Button(action: { vm.switchSides() }) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                        .frame(width: 40, height: 40)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
-                        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
-                }
-                
-                Spacer()
-                
-                // Brand Logo Title & Timer
+            ZStack {
+                // Centered Brand Logo Title & Timer
                 VStack(spacing: 6) {
                     headerLogo
                     
@@ -717,13 +703,11 @@ struct ContentView: View {
                         .foregroundColor(Color(red: 134/255, green: 134/255, blue: 139/255))
                 }
                 
-                Spacer()
-                
-                // Settings & Language Row
-                HStack(spacing: 8) {
-                    // Settings Button
-                    Button(action: { showSettingsSheet = true }) {
-                        Image(systemName: "gearshape")
+                // Left-aligned actions
+                HStack {
+                    // Switch Sides (Left)
+                    Button(action: { vm.switchSides() }) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
                             .frame(width: 40, height: 40)
@@ -732,22 +716,42 @@ struct ContentView: View {
                             .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
                             .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
                     }
+                    Spacer()
+                }
+                
+                // Right-aligned actions
+                HStack {
+                    Spacer()
                     
-                    // Language switcher (Right)
-                    Button(action: { vm.showLangDropdown.toggle() }) {
-                        Image(systemName: "globe")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-                            .frame(width: 40, height: 40)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
-                            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                    HStack(spacing: 8) {
+                        // Settings Button
+                        Button(action: { showSettingsSheet = true }) {
+                            Image(systemName: "gearshape")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                                .frame(width: 40, height: 40)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
+                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                        }
+                        
+                        // Language switcher (Right)
+                        Button(action: { vm.showLangDropdown.toggle() }) {
+                            Image(systemName: "globe")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+                                .frame(width: 40, height: 40)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 0.5))
+                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                        }
                     }
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, 32) // Pushes cards down from notch/dynamic island
+            .padding(.top, 32)
             .padding(.bottom, 24)
             
             // Score Cards Grid
