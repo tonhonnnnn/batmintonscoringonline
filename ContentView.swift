@@ -817,7 +817,7 @@ struct ContentView: View {
                 scoreCardView(playerIndex: rightIdx, alignLeft: false)
             }
             .padding(.horizontal, 24)
-            .padding(.top, 16) // Creates space below header logo
+            .padding(.top, 64) // Creates space below header logo
             
             // Sets Score List History
             setsListView
@@ -949,6 +949,19 @@ struct ContentView: View {
     // Custom Score Card view component
     private func scoreCardView(playerIndex: Int, alignLeft: Bool) -> some View {
         VStack(spacing: 12) {
+            // Editable Player Name text fields
+            TextField("", text: Binding(
+                get: { vm.playerNames[playerIndex] },
+                set: { vm.updatePlayerName(index: playerIndex, name: $0) }
+            ))
+            .font(.system(size: 16, weight: .bold))
+            .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            .background(Color.black.opacity(0.01))
+            .cornerRadius(8)
+            
             // Card Tap Target
             Button(action: { vm.scorePoint(playerIndex: playerIndex) }) {
                 ZStack {
@@ -1025,19 +1038,6 @@ struct ContentView: View {
             }
             .buttonStyle(CardButtonStyle())
             .aspectRatio(verticalSizeClass == .compact ? nil : 0.74, contentMode: .fit)
-            
-            // Editable Player Name text fields
-            TextField("", text: Binding(
-                get: { vm.playerNames[playerIndex] },
-                set: { vm.updatePlayerName(index: playerIndex, name: $0) }
-            ))
-            .font(.system(size: 16, weight: .regular))
-            .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
-            .background(Color.black.opacity(0.01))
-            .cornerRadius(8)
         }
     }
     
