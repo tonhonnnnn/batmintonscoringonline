@@ -480,8 +480,8 @@ struct ContentView: View {
             HStack {
                 // Switch Sides (Left)
                 Button(action: { vm.switchSides() }) {
-                    Image(systemName: "arrow.left.and.right.righttriangle.left.and.righttriangle.right")
-                        .font(.system(size: 15, weight: .semibold))
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(Color(red: 29/255, green: 29/255, blue: 31/255))
                         .frame(width: 40, height: 40)
                         .background(.ultraThinMaterial)
@@ -510,8 +510,8 @@ struct ContentView: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .padding(.bottom, 24)
+            .padding(.top, 32) // Pushes cards down from notch/dynamic island
+            .padding(.bottom, 32)
             
             // Score Cards Grid
             HStack(spacing: 20) {
@@ -524,10 +524,11 @@ struct ContentView: View {
                 scoreCardView(playerIndex: rightIdx, alignLeft: false)
             }
             .padding(.horizontal, 24)
+            .padding(.top, 16) // Creates space below header logo
             
             // Sets Score List History
             setsListView
-                .padding(.vertical, 32)
+                .padding(.vertical, 40) // Spreads sets history list down
             
             Spacer()
             
@@ -654,26 +655,24 @@ struct ContentView: View {
                     
                     VStack {
                         // Serving status Court text indicator
-                        if vm.server == playerIndex && !vm.isMatchOver {
-                            let isEven = vm.scores[playerIndex] % 2 == 0
-                            let serveText = isEven ? vm.strings.rightServe : vm.strings.leftServe
-                            HStack(spacing: 5) {
-                                Circle()
-                                    .fill(Color(red: 0, green: 113/255, blue: 227/255))
-                                    .frame(width: 6, height: 6)
-                                Text(serveText)
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(Color(red: 0, green: 113/255, blue: 227/255))
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Color(red: 0, green: 113/255, blue: 227/255).opacity(0.1))
-                            .clipShape(Capsule())
-                            .padding(.top, 16)
-                        } else {
-                            Spacer()
-                                .frame(height: 24)
+                        let isServing = vm.server == playerIndex && !vm.isMatchOver
+                        let isEven = vm.scores[playerIndex] % 2 == 0
+                        let serveText = isEven ? vm.strings.rightServe : vm.strings.leftServe
+                        
+                        HStack(spacing: 5) {
+                            Circle()
+                                .fill(Color(red: 0, green: 113/255, blue: 227/255))
+                                .frame(width: 6, height: 6)
+                            Text(serveText)
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Color(red: 0, green: 113/255, blue: 227/255))
                         }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color(red: 0, green: 113/255, blue: 227/255).opacity(0.1))
+                        .clipShape(Capsule())
+                        .padding(.top, 16)
+                        .opacity(isServing ? 1.0 : 0.0)
                         
                         Spacer()
                         
