@@ -261,8 +261,12 @@ class MatchViewModel: ObservableObject {
         pointHistory.append(playerIndex)
         setPointHistories[activeSet].append(playerIndex)
         
+        let oldActiveSet = activeSet
         checkSetStatus()
-        speakScore()
+        
+        if !isMatchOver && activeSet == oldActiveSet {
+            speakScore()
+        }
     }
     
     private func checkSetStatus() {
@@ -299,10 +303,12 @@ class MatchViewModel: ObservableObject {
                 isMatchOver = true
                 showWinnerOverlay = true
                 stopTimer()
+                speakScore(matchWinner: setWinner, finalScore: [s0, s1])
             } else {
                 activeSet += 1
                 scores = [0, 0]
                 server = setWinner
+                speakScore(setWinner: setWinner, finalScore: [s0, s1])
             }
         }
     }
@@ -396,60 +402,123 @@ class MatchViewModel: ObservableObject {
     }
     
     // MARK: - Voice Score Announcer
-    func speakScore() {
+    func speakScore(setWinner: Int? = nil, matchWinner: Int? = nil, finalScore: [Int]? = nil) {
         guard isVoiceEnabled else { return }
         
         let speechString: String
-        let s0 = scores[0]
-        let s1 = scores[1]
         
-        if s0 == 0 && s1 == 0 {
+        if let matchWin = matchWinner, let score = finalScore {
+            let leading = max(score[0], score[1])
+            let trailing = min(score[0], score[1])
+            let winnerName = playerNames[matchWin]
+            
             if lang == "th" {
-                speechString = "เริ่มเล่น ศูนย์ เท่า"
+                speechString = "จบการแข่งขัน \(winnerName) ชนะ ด้วยคะแนน \(leading) ต่อ \(trailing)"
             } else if lang == "ja" {
-                speechString = "ラブ オール プレイ"
+                speechString = "マッチ終了 \(winnerName) の勝ち、\(leading) たい \(trailing)"
             } else if lang == "zh" {
-                speechString = "开始比赛 零平"
+                speechString = "比赛结束 \(winnerName) 获胜，比分 \(leading) 比 \(trailing)"
             } else if lang == "ko" {
-                speechString = "러브 올 플레이"
+                speechString = "경기 종료 \(winnerName) 승리, 스코어 \(leading) 대 \(trailing)"
             } else {
-                speechString = "Love all, play"
+                speechString = "Match won by \(winnerName), \(leading) to \(trailing)"
+            }
+        } else if let setWin = setWinner, let score = finalScore {
+            let leading = max(score[0], score[1])
+            let trailing = min(score[0], score[1])
+            let winnerName = playerNames[setWin]
+            
+            if lang == "th" {
+                speechString = "จบเซต \(winnerName) ชนะ \(leading) ต่อ \(trailing)"
+            } else if lang == "ja" {
+                speechString = "ゲームウォン バイ \(winnerName)、\(leading) たい \(trailing)"
+            } else if lang == "zh" {
+                speechString = "单局结束 \(winnerName) 获胜，比分 \(leading) 比 \(trailing)"
+            } else if lang == "ko" {
+                speechString = "세트 종료 \(winnerName) 승리, 스코어 \(leading) 대 \(trailing)"
+            } else {
+                speechString = "Set won by \(winnerName), \(leading) to \(trailing)"
             }
         } else {
-            let leadingScore = max(s0, s1)
-            let trailingScore = min(s0, s1)
+            let s0 = scores[0]
+            let s1 = scores[1]
             
-            if isMatchPoint(for: 0) {
-                speechString = getPointAnnounce(playerIndex: 0, isMatch: true)
-            } else if isMatchPoint(for: 1) {
-                speechString = getPointAnnounce(playerIndex: 1, isMatch: true)
-            } else if isSetPoint(for: 0) {
-                speechString = getPointAnnounce(playerIndex: 0, isMatch: false)
-            } else if isSetPoint(for: 1) {
-                speechString = getPointAnnounce(playerIndex: 1, isMatch: false)
-            } else if s0 == s1 {
+            if s0 == 0 && s1 == 0 {
                 if lang == "th" {
-                    speechString = "\(s0) เท่า"
+                    speechString = "เริ่มเล่น ศูนย์ เท่า"
                 } else if lang == "ja" {
-                    speechString = "\(s0) オール"
+                    speechString = "ラブ オール プレイ"
                 } else if lang == "zh" {
-                    speechString = "\(s0) 平"
+                    speechString = "开始比赛 零平"
                 } else if lang == "ko" {
-                    speechString = "\(s0) 올"
+                    speechString = "러브 올 플레이"
                 } else {
-                    speechString = "\(s0) all"
+                    speechString = "Love all, play"
                 }
             } else {
-                if lang == "th" {
-                    speechString = "\(leadingScore) ต่อ \(trailingScore)"
-                } else if lang == "ja" {
-                    speechString = "\(leadingScore) たい \(trailingScore)"
-                } else if lang == "zh" {
-                    speechString = "\(leadingScore) 比 \(trailingScore)"
-                } else if lang == "ko" {
-                    speechString = "\(leadingScore) 대 \(trailingScore)"
+                let serverScore = scores[server]
+                let receiverScore = scores[1 - server]
+                
+                let isMatchPt = isMatchPoint(for: 0) || isMatchPoint(for: 1)
+                let isSetPt = isSetPoint(for: 0) || isSetPoint(for: 1)
+                
+                var baseScoreStr = ""
+                if serverScore == receiverScore {
+                    if lang == "th" {
+                        baseScoreStr = "\(serverScore) เท่า"
+                    } else if lang == "ja" {
+                        baseScoreStr = "\(serverScore) オール"
+                    } else if lang == "zh" {
+                        baseScoreStr = "\(serverScore) 平"
+                    } else if lang == "ko" {
+                        baseScoreStr = "\(serverScore) 올"
+                    } else {
+                        baseScoreStr = "\(serverScore) all"
+                    }
                 } else {
-                    speechString = "\(leadingScore), \(trailingScore)"
+                    if lang == "th" {
+                        baseScoreStr = "\(serverScore) ต่อ \(receiverScore)"
+                    } else if lang == "ja" {
+                        baseScoreStr = "\(serverScore) たい \(receiverScore)"
+                    } else if lang == "zh" {
+                        baseScoreStr = "\(serverScore) 比 \(receiverScore)"
+                    } else if lang == "ko" {
+                        baseScoreStr = "\(serverScore) 대 \(receiverScore)"
+                    } else {
+                        baseScoreStr = "\(serverScore), \(receiverScore)"
+                    }
+                }
+                
+                if isMatchPt {
+                    let matchPointPlayer = isMatchPoint(for: 0) ? 0 : 1
+                    let name = playerNames[matchPointPlayer]
+                    if lang == "th" {
+                        speechString = "\(baseScoreStr), แมตช์พอยท์ \(name)"
+                    } else if lang == "ja" {
+                        speechString = "\(baseScoreStr), マッチポイント \(name)"
+                    } else if lang == "zh" {
+                        speechString = "\(baseScoreStr), 赛点 \(name)"
+                    } else if lang == "ko" {
+                        speechString = "\(baseScoreStr), 매치 포인트 \(name)"
+                    } else {
+                        speechString = "\(baseScoreStr), Match Point \(name)"
+                    }
+                } else if isSetPt {
+                    let setPointPlayer = isSetPoint(for: 0) ? 0 : 1
+                    let name = playerNames[setPointPlayer]
+                    if lang == "th" {
+                        speechString = "\(baseScoreStr), เกมพอยท์ \(name)"
+                    } else if lang == "ja" {
+                        speechString = "\(baseScoreStr), เกมポイント \(name)"
+                    } else if lang == "zh" {
+                        speechString = "\(baseScoreStr), 局点 \(name)"
+                    } else if lang == "ko" {
+                        speechString = "\(baseScoreStr), 세트 포인트 \(name)"
+                    } else {
+                        speechString = "\(baseScoreStr), Game Point \(name)"
+                    }
+                } else {
+                    speechString = baseScoreStr
                 }
             }
         }
@@ -473,24 +542,7 @@ class MatchViewModel: ObservableObject {
         }
         speechSynthesizer.speak(utterance)
     }
-    
-    private func getPointAnnounce(playerIndex: Int, isMatch: Bool) -> String {
-        let name = playerNames[playerIndex]
-        if isMatch {
-            if lang == "th" { return "แมตช์พอยท์ \(name)" }
-            if lang == "ja" { return "マッチポイント \(name)" }
-            if lang == "zh" { return "赛点 \(name)" }
-            if lang == "ko" { return "매치 포인트 \(name)" }
-            return "Match Point \(name)"
-        } else {
-            if lang == "th" { return "เกมพอยท์ \(name)" }
-            if lang == "ja" { return "ゲームポイント \(name)" }
-            if lang == "zh" { return "局点 \(name)" }
-            if lang == "ko" { return "세트 포인트 \(name)" }
-            return "Game Point \(name)"
-        }
-    }
-    
+
     // MARK: - Timer Management
     func startTimerIfNeeded() {
         guard timer == nil else { return }
