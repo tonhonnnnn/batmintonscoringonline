@@ -1493,17 +1493,26 @@ struct WinnerOverlayView: View {
     
     private func triggerWinnerHaptic() {
         #if os(iOS)
-        // Continuous strong vibration (System Sound 4095 is standard vibrate)
-        AudioServicesPlaySystemSound(4095)
-        
-        // Massive staggered sequence of heavy and success haptic rumble
-        for delay in [0.0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35, 1.5, 1.65, 1.8, 1.95] {
+        // 10-second continuous vibration loop (triggered every 1.5 seconds)
+        for i in 0..<7 {
+            let delay = Double(i) * 1.5
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                let generator = UINotificationFeedbackGenerator()
+                AudioServicesPlaySystemSound(4095)
+            }
+        }
+        
+        // Staggered success notification pulses for 10 seconds
+        for i in 0..<33 {
+            let delay = Double(i) * 0.3
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                let generator = UNotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
             }
         }
-        for delay in [0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95, 1.1, 1.25, 1.4, 1.55, 1.7, 1.85, 2.0] {
+            
+        // Staggered heavy impact pulses offset by 0.15 seconds for 10 seconds
+        for i in 0..<33 {
+            let delay = Double(i) * 0.3 + 0.15
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 let impact = UIImpactFeedbackGenerator(style: .heavy)
                 impact.impactOccurred(intensity: 1.0)
