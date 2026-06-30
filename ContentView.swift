@@ -690,7 +690,7 @@ struct ContentView: View {
                 }
             }
             .buttonStyle(CardButtonStyle())
-            .aspectRatio(verticalSizeClass == .compact ? .infinity : 1/1.35, contentMode: .fit)
+            .aspectRatio(verticalSizeClass == .compact ? nil : 0.74, contentMode: .fit)
             
             // Editable Player Name text fields
             TextField("", text: Binding(
